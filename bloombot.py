@@ -23,7 +23,7 @@ def sms_handler():
     """Respond to incoming calls with a simple text message."""
     body = request.values.get('Body', None)
     
-    if not body: return str("No 'Body' field in Message")
+    if not body: return str("No 'Body' field in message")
     
     (msg_type, params) = process_body(body)
 
