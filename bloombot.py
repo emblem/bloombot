@@ -31,12 +31,16 @@ def sms_handler():
         return register_plate(request, params)
     elif msg_type == 'STOP':
         return stop_messages(request)
+    elif unknown_number(request):
+        return new_user_msg()
+    #These commands require a registered source number    
     elif msg_type == 'OPEN':
         return open_door(request, params)
-    elif msg_type == 'HELP':
-        return help_msg()
+    elif msg_type == 'PLATE':
+        return msg_plate(request, params)
     else:
-        return msg_plate(request, msg_type, params)
+        return help_msg()
+
 
 #get the canonical form for a plate string
 def std_plate(plate_str):
@@ -69,7 +73,7 @@ def stop_messages(request):
     assert(phone)
     
     q = Query()
-    print(phone)
+
     db.remove(q.phone == phone)
     return msg("Messages Stopped")
 
@@ -80,10 +84,21 @@ def help_msg():
     return msg("Try\n"
                "- register ABC123\n"
                "- stop\n"
-               "- XYZ567 your lights are on")
+               "- plate XYZ567 your lights are on")
+
+def unknown_number(request):
+    phone = request.values.get('From', None)
+    assert(phone)
+
+    q = Query()
+    return (len(db.search(q.phone == phone)) == 0)
+
+def new_user_msg():
+    return msg("Hi! This is Bloombot.  You need to register.  Send the word 'register' followed by your license plate number")
                          
-def msg_plate(request, plate, params):
+def msg_plate(request, params):
     """send a message to the number(s) associated with the given plate"""
+    (plate, params) = process_body(params)
     
     plate = std_plate(plate)
     q = Query()
@@ -96,7 +111,7 @@ def msg_plate(request, plate, params):
                 traceback.print_exc()
         return msg("Your message was sent.")
 
-    return msg("Unknown plate: " + plate)
+    return msg("Unknown plate: '" + plate + "'.")
     
 def send_message(phone, message):
     client.api.account.messages.create(
