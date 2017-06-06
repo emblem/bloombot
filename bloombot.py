@@ -29,7 +29,7 @@ def sms_handler():
 
     if msg_type == 'REGISTER':
         return register_plate(request, params)
-    elif msg_type == 'STOP':
+    elif msg_type == 'UNREGISTER':
         return stop_messages(request)
     elif unknown_number(request):
         return new_user_msg()
@@ -59,7 +59,7 @@ def register_plate(request, params):
         if not db.update({'phone':phone}, q.plate == plate):
             db.insert({'phone':phone, 'plate':plate})
 
-        return msg("Registered '" + plate + "' to " + phone)
+        return msg("Registered '" + plate + ". To send a message send the word 'plate' followed by the plate number and the message.")
     except AssertionError:
         return msg("Failed to register plate")
 
@@ -83,7 +83,7 @@ def open_door(request, params):
 def help_msg():
     return msg("Try\n"
                "- register ABC123\n"
-               "- stop\n"
+               "- unregister\n"
                "- plate XYZ567 your lights are on")
 
 def unknown_number(request):
@@ -109,9 +109,9 @@ def msg_plate(request, params):
                 send_message(record['phone'], plate + ": " + params)
             except KeyError:
                 traceback.print_exc()
-        return msg("Your message was sent.")
+        return msg("OK! Your message was sent.")
 
-    return msg("Unknown plate: '" + plate + "'.")
+    return msg("Sorry, I don't know who has the plate: '" + plate + "'.")
     
 def send_message(phone, message):
     client.api.account.messages.create(
