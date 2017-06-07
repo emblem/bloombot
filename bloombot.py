@@ -1,10 +1,10 @@
 from flask import Flask, request, redirect
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
-from tinydb import TinyDB, Query
 import re
 import traceback
 import json
+import database
 
 with open('auth.json') as auth_file:
     auth_data = json.load(auth_file)
@@ -16,7 +16,7 @@ auth_token = auth_data["auth_token"]
 
 client = Client(account_sid, auth_token)
 app = Flask(__name__)
-db = TinyDB('data/plates.json')
+db = database.UserDatabase()
 
 @app.route("/", methods=['GET', 'POST'])
 def sms_handler():
@@ -54,12 +54,18 @@ def register_plate(request, params):
             
         assert(plate)
         assert(phone)
-        
-        q = Query()
-        if not db.update({'phone':phone}, q.plate == plate):
-            db.insert({'phone':phone, 'plate':plate})
 
-        return msg("Registered '" + plate + ". To send a message send the word 'plate' followed by the plate number and the message.")
+        phone = int(phone)
+        
+        try:
+            db.updateUser('Plate', plate,  {'Phone': phone, 'sms_enable':'TRUE'})
+        except KeyError:
+            try:
+                db.updateUser('Phone', phone, {'Plate': plate, 'sms_enable':'TRUE'})
+            except KeyError:
+                db.addUser({'Phone':phone, 'Plate':plate, 'sms_enable':'TRUE'})
+                
+        return msg("Registered '" + plate + "'. To send a message send the word 'plate' followed by the plate number and the message.")
     except AssertionError:
         return msg("Failed to register plate")
 
@@ -71,10 +77,10 @@ def stop_messages(request):
     """remove a phone number from the database"""
     phone = request.values.get('From', None)
     assert(phone)
+    phone = int(phone)
     
-    q = Query()
-
-    db.remove(q.phone == phone)
+    db.updateUser('Phone', phone, {'sms_enable':'false'})
+    
     return msg("Messages Stopped")
 
 def open_door(request, params):
@@ -89,9 +95,13 @@ def help_msg():
 def unknown_number(request):
     phone = request.values.get('From', None)
     assert(phone)
+    phone = int(phone)
 
-    q = Query()
-    return (len(db.search(q.phone == phone)) == 0)
+    try:
+        db.getUserByField('Phone', phone)
+        return False
+    except KeyError:
+        return True
 
 def new_user_msg():
     return msg("Hi! This is Bloombot.  You need to register.  Send the word 'register' followed by your license plate number")
@@ -101,12 +111,14 @@ def msg_plate(request, params):
     (plate, params) = process_body(params)
     
     plate = std_plate(plate)
-    q = Query()
-    records = db.search(q.plate == plate)
+    records = [db.getUserByField('Plate', plate)]
     if records:
         for record in records:
             try:
-                send_message(record['phone'], plate + ": " + params)
+                if(record['sms_enable']=='TRUE'):
+                    send_message(record['Phone'], plate + ": " + params)
+                else:
+                    return msg("Sorry, that user has turned off receipt of messages")
             except KeyError:
                 traceback.print_exc()
         return msg("OK! Your message was sent.")
