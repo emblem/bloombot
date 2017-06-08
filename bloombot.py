@@ -51,11 +51,13 @@ def register_plate(request, params):
     try:
         plate = std_plate(params)
         phone = request.values.get('From', None)
-            
+
+        if not plate: return msg("Please send the word register followed by your license plate.  You are not yet registered.")
+
         assert(plate)
         assert(phone)
 
-        phone = int(phone)
+        phone = str(int(phone))
         
         try:
             db.updateUser('Plate', plate,  {'Phone': phone, 'sms_enable':'TRUE'})
@@ -77,10 +79,13 @@ def stop_messages(request):
     """remove a phone number from the database"""
     phone = request.values.get('From', None)
     assert(phone)
-    phone = int(phone)
-    
-    db.updateUser('Phone', phone, {'sms_enable':'false'})
-    
+    phone = str(int(phone))
+
+    try:
+        db.updateUser('Phone', phone, {'sms_enable':'false'})
+    except KeyError:
+        return msg("You aren't a registered user.")
+            
     return msg("Messages Stopped")
 
 def open_door(request, params):
@@ -95,7 +100,7 @@ def help_msg():
 def unknown_number(request):
     phone = request.values.get('From', None)
     assert(phone)
-    phone = int(phone)
+    phone = str(int(phone))
 
     try:
         db.getUserByField('Phone', phone)

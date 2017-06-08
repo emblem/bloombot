@@ -11,32 +11,44 @@ class UserDatabase:
  
         # Find a workbook by name and open the first sheet
         # Make sure you use the right name here.
-        self.sheet = client.open("Keycards").sheet1
+        self.sheet = client.open("Keycards").worksheet("Test Sheet")
 
     def getUserByField(self, fieldName, fieldValue):
         (user, index) = self._getUserByField(fieldName, fieldValue)
         return user
     
     def _getUserByField(self, fieldName, fieldValue):
-        records = self.sheet.get_all_records()
+        fields = self.sheet.row_values(1)
+        field_column_idx = fields.index(fieldName) + 1
+        print(fieldName + " at " + str(field_column_idx))
+
+        field_values = self.sheet.col_values(field_column_idx)
+
         try:
-            return ((user,i+2) for i,user in enumerate(records) if user[fieldName] == fieldValue).next()
-        except StopIteration:
+            user_row_idx = field_values.index(fieldValue) + 1
+            user_values = self.sheet.row_values(user_row_idx)
+            
+            user = dict(zip(fields,user_values))
+            user.pop('',None)
+            
+            return (user, user_row_idx)
+        except ValueError:
             raise KeyError("User Not Found")
 
     def addUser(self, user):
         columnNames = self.sheet.row_values(1)
         row = [user.get(col,'') for col in columnNames]
-        self.sheet.insert_row(row,2)
+        self.sheet.append_row(row)
 
     def updateUser(self, keyField, keyValue, user):
         (unused_user, row) = self._getUserByField(keyField, keyValue)
         col_headers = self.sheet.row_values(1)
-        
-        cell_list = self.sheet.range(row,1,row,self.sheet.col_count)
 
-        for cell in cell_list:
-            cell.value = user.get(col_headers[cell.col-1],cell.value)
+        cells = self.sheet.range(row,1,row,len(col_headers))
         
-        self.sheet.update_cells(cell_list)    
-        
+        for (col,header) in enumerate(col_headers):
+            cell = cells[col]#self.sheet.cell(row, col)
+            col = col + 1
+            new_value = user.get(header, cell.value)
+            if(header == 'ID' or not header or new_value == cell.value): continue
+            self.sheet.update_cell(row, col, new_value)
