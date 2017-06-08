@@ -11,7 +11,12 @@ class UserDatabase:
  
         # Find a workbook by name and open the first sheet
         # Make sure you use the right name here.
-        self.sheet = client.open("Keycards").worksheet("Test Sheet")
+
+        #Uncomment for DEV
+        #self.sheet = client.open("Keycards").worksheet("Test Sheet")
+
+        #Uncomment for PROD
+        self.sheet = client.open("Keycards").sheet1
 
     def getUserByField(self, fieldName, fieldValue):
         (user, index) = self._getUserByField(fieldName, fieldValue)
