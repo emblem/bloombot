@@ -75,8 +75,6 @@ class UserDatabase:
     def updateUser(self, keyField, keyValue, user):
         (unused_user, row) = self._getUserByField(keyField, keyValue)
 
-        print("Row: " + str(row))
-        
         col_headers = self.sheet.row_values(1)
 
         cells = self.sheet.range(row,1,row,len(col_headers))
@@ -94,7 +92,5 @@ class UserDatabase:
                 else:
                     new_value = [""]
 
-            print new_value
-                
             if(header == 'ID' or not header or new_value == cell.value): continue
             self.sheet.update_cell(row, col, new_value)
