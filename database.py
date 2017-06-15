@@ -88,9 +88,9 @@ class UserDatabase:
                 if(user.get(header,None)):
                     new_value = json.dumps(user.get(header))
                 elif cell.value:
-                    new_value = json.loads(cell.value)
+                    new_value = cell.value
                 else:
-                    new_value = [""]
+                    new_value = '[""]'
 
             if(header == 'ID' or not header or new_value == cell.value): continue
             self.sheet.update_cell(row, col, new_value)
