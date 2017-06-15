@@ -43,7 +43,10 @@ class UserDatabase:
             user_values = self.sheet.row_values(user_row_idx)
 
             plate_idx = fields.index("Plate")
-            user_values[plate_idx] = json.loads(user_values[plate_idx])
+            if user_values[plate_idx]:
+                user_values[plate_idx] = json.loads(user_values[plate_idx])
+            else:
+                user_values[plate_idx] = [""]
             
             user = dict(zip(fields,user_values))
             user.pop('',None)
@@ -71,6 +74,9 @@ class UserDatabase:
 
     def updateUser(self, keyField, keyValue, user):
         (unused_user, row) = self._getUserByField(keyField, keyValue)
+
+        print("Row: " + str(row))
+        
         col_headers = self.sheet.row_values(1)
 
         cells = self.sheet.range(row,1,row,len(col_headers))
@@ -81,7 +87,14 @@ class UserDatabase:
             if header != "Plate":
                 new_value = user.get(header, cell.value)
             else:
-                new_value = json.dumps(user.get(header), json.loads(cell.value))
+                if(user.get(header,None)):
+                    new_value = json.dumps(user.get(header))
+                elif cell.value:
+                    new_value = json.loads(cell.value)
+                else:
+                    new_value = [""]
+
+            print new_value
                 
             if(header == 'ID' or not header or new_value == cell.value): continue
             self.sheet.update_cell(row, col, new_value)

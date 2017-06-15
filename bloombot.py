@@ -63,8 +63,10 @@ def register_plate(request, params):
             db.updateUser('Plate', [plate],  {'Phone': phone, 'sms_enable':'TRUE'})
         except KeyError:
             try:
+                print("Trying by Phone")
                 db.updateUser('Phone', phone, {'Plate': [plate], 'sms_enable':'TRUE'})
             except KeyError:
+                print("Just Adding")
                 db.addUser({'Phone':phone, 'Plate':[plate], 'sms_enable':'TRUE'})
                 
         return msg("Registered '" + plate + "'. To send a message send the word 'plate' followed by the plate number and the message.")
