@@ -52,7 +52,7 @@ def register_plate(request, params):
         plate = std_plate(params)
         phone = request.values.get('From', None)
 
-        if not plate: return msg("Please send the word register followed by your license plate.  You are not yet registered.")
+        if not plate: return msg("That didn't work. Please send the word register followed by your license plate. You are not yet registered.")
 
         assert(plate)
         assert(phone)
@@ -94,7 +94,7 @@ def open_door(request, params):
     return msg("Door Requests Not Implemented")
 
 def help_msg():
-    return msg("Try\n"
+    return msg("That didn't work.  Try\n"
                "- register ABC123\n"
                "- unregister\n"
                "- plate XYZ567 your lights are on")
