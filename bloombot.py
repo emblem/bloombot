@@ -118,17 +118,20 @@ def msg_plate(request, params):
     (plate, params) = process_body(params)
     
     plate = std_plate(plate)
-    records = [db.getUserByField('Plate', plate)]
-    if records:
-        for record in records:
-            try:
-                if(record['sms_enable']=='TRUE'):
-                    send_message(record['Phone'], plate + ": " + params)
-                else:
-                    return msg("Sorry, that user has turned off receipt of messages")
-            except KeyError:
-                traceback.print_exc()
-        return msg("OK! Your message was sent.")
+    try:
+        records = [db.getUserByField('Plate', plate)]
+        if records:
+            for record in records:
+                try:
+                    if(record['sms_enable']=='TRUE'):
+                        send_message(record['Phone'], plate + ": " + params)
+                    else:
+                        return msg("Sorry, that user has turned off receipt of messages")
+                except KeyError:
+                    traceback.print_exc()
+                    return msg("OK! Your message was sent.")
+    except KeyError:
+        pass
 
     return msg("Sorry, I don't know who has the plate: '" + plate + "'.")
     
